@@ -28,7 +28,7 @@ export default async function Home() {
                         variant="ghost"
                         asChild
                     >
-                        <Link href="/invoces/new">
+                        <Link href="/invoices/new">
                             <CirclePlus className="h-4 w-4" />
                             Create Invoice
                         </Link>
