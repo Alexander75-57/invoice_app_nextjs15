@@ -1,6 +1,9 @@
 import { eq } from 'drizzle-orm';
 import { notFound } from 'next/navigation';
 
+import { auth } from '@clerk/nextjs/server';
+import { and } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { Invoices } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
@@ -11,12 +14,15 @@ export default async function InvoicePage({
 }: {
     params: { invoiceId: string };
 }) {
-    const invoiceId = await parseInt(params.invoiceId);
+    const { userId } = await auth();
+    if (!userId) return;
+
+    const invoiceId = parseInt(params.invoiceId);
 
     const [result] = await db
         .select()
         .from(Invoices)
-        .where(eq(Invoices.id, invoiceId))
+        .where(and(eq(Invoices.id, invoiceId), eq(Invoices.userId, userId)))
         .limit(1); // Invoices.id - где ищем, invoiceId что ищем
 
     if (!result) {
@@ -45,7 +51,7 @@ export default async function InvoicePage({
             <p className="text-3xl mb-3">${(result.value / 100).toFixed(2)}</p>
             <p className="text-lg mb-8">{result.description}</p>
             <h2 className="font-bold text-lg mb-4">Billing Details</h2>
-            <ul className="flex gap-4">
+            <ul className="grid gap-4">
                 <li className="flex gap-4">
                     <strong className="block w-28 flex-shrink-0 font-medium text-sm">
                         Invoice ID

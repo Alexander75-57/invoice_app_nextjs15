@@ -18,6 +18,9 @@ import * as Clerk from '@clerk/elements/common';
 import * as SignIn from '@clerk/elements/sign-in';
 import Link from 'next/link';
 
+import { AnimatePresence, motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+
 export default function SignInPage() {
     return (
         <div className="relative grid w-full flex-grow items-center px-4 sm:justify-center">
@@ -87,14 +90,23 @@ export default function SignInPage() {
                     >
                         Sign In
                     </SignIn.Action>
+                    <p className="text-center">
+                        <SignIn.Passkey asChild>
+                            <Button className="w-full" variant="outline">
+                                Continue with Passkey
+                            </Button>
+                        </SignIn.Passkey>
+                    </p>
                     <p className="text-center text-sm text-white/60">
                         No account?{' '}
-                        <Clerk.Link
-                            navigate="sign-up"
+                        <Link
+                            href={String(
+                                process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL
+                            )}
                             className="text-white decoration-white/30 underline-offset-4 outline-none hover:underline focus-visible:underline"
                         >
                             Create an account
-                        </Clerk.Link>
+                        </Link>
                     </p>
                 </SignIn.Step>
                 <SignIn.Step
@@ -136,11 +148,56 @@ export default function SignInPage() {
                             <Clerk.Label className="absolute left-2 top-0 -translate-y-1/2 bg-emerald-950 px-2 font-mono text-xs/4 text-white before:absolute before:inset-0 before:-z-10 before:bg-black/50 group-focus-within/field:text-emerald-300 group-data-[invalid]/field:text-rose-400">
                                 Phone code
                             </Clerk.Label>
-                            <Clerk.Input
+                            {/* <Clerk.Input
                                 type="otp"
                                 required
                                 className="w-full rounded-lg bg-transparent px-4 py-2.5 text-sm text-white outline-none ring-1 ring-inset ring-white/20 hover:ring-white/30 focus:shadow-[0_0_6px_0] focus:shadow-emerald-500/20 focus:ring-[1.5px] focus:ring-emerald-300 data-[invalid]:shadow-rose-400/20 data-[invalid]:ring-rose-400"
+                            /> */}
+                            <Clerk.Input
+                                type="otp"
+                                required
+                                className="flex justify-center gap-1"
+                                render={({ value, status }) => (
+                                    <div
+                                        data-status={status}
+                                        className="relative h-9 w-8 rounded-md bg-white ring-1 ring-inset ring-zinc-300 data-[status=selected]:bg-sky-400/10 data-[status=selected]:shadow-[0_0_8px_2px_theme(colors.sky.400/30%)] data-[status=selected]:ring-sky-400"
+                                    >
+                                        <AnimatePresence>
+                                            {value && (
+                                                <motion.span
+                                                    initial={{
+                                                        opacity: 0,
+                                                        scale: 0.75,
+                                                    }}
+                                                    animate={{
+                                                        opacity: 1,
+                                                        scale: 1,
+                                                    }}
+                                                    exit={{
+                                                        opacity: 0,
+                                                        scale: 0.75,
+                                                    }}
+                                                    className="absolute inset-0 flex items-center justify-center text-zinc-950"
+                                                >
+                                                    {value}
+                                                </motion.span>
+                                            )}
+                                            {value}
+                                        </AnimatePresence>
+                                        {status === 'cursor' && (
+                                            <motion.div
+                                                layoutId="otp-input-focus"
+                                                transition={{
+                                                    ease: [0.2, 0.4, 0, 1],
+                                                    duration: 0.2,
+                                                }}
+                                                className="absolute inset-0 z-10 rounded-[inherit] border border-sky-400 bg-sky-400/10 shadow-[0_0_8px_2px_theme(colors.sky.400/30%)]"
+                                            />
+                                        )}
+                                    </div>
+                                )}
                             />
+                            {/* ************* */}
                             <Clerk.FieldError className="mt-2 block text-xs text-rose-400" />
                         </Clerk.Field>
                         <SignIn.Action

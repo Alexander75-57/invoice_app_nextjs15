@@ -4,5 +4,6 @@ CREATE TABLE "invoices" (
 	"createTS" timestamp DEFAULT now() NOT NULL,
 	"value" integer NOT NULL,
 	"description" text NOT NULL,
+	"userId" text NOT NULL,
 	"status" "status" NOT NULL
 );
