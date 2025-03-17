@@ -1,10 +1,11 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-
 import { auth } from '@clerk/nextjs/server';
+import { eq, and } from 'drizzle-orm';
+import { revalidatePath } from 'next/cache';
 
-import { Invoices } from '@/db/schema';
+import { Invoices, Status } from '@/db/schema';
 import { db } from '@/db';
 
 export async function createAction(formData: FormData) {
@@ -28,4 +29,21 @@ export async function createAction(formData: FormData) {
         });
 
     redirect(`/invoices/${results[0].id}`);
+}
+
+export async function updateStatusAction(formData: FormData) {
+    const { userId } = await auth();
+    if (!userId) return;
+
+    const id = formData.get('id') as string;
+    const status = formData.get('status') as Status;
+
+    const results = await db
+        .update(Invoices)
+        .set({
+            status,
+        })
+        .where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId)));
+
+    revalidatePath(`/invoices/${id}`, 'page');
 }
