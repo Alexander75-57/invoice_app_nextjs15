@@ -5,16 +5,28 @@ import { auth } from '@clerk/nextjs/server';
 import { eq, and } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
-import { Invoices, Status } from '@/db/schema';
+import { Customers, Invoices, Status } from '@/db/schema';
 import { db } from '@/db';
 
 export async function createAction(formData: FormData) {
     const { userId, redirectToSignIn } = await auth();
+    if (!userId) return redirectToSignIn();
 
     const value = Math.floor(parseFloat(String(formData.get('value'))) * 100);
     const description = formData.get('descriptions') as string;
+    const name = formData.get('name') as string;
+    const email = formData.get('descriptions') as string;
 
-    if (!userId) return redirectToSignIn();
+    const [customer] = await db
+        .insert(Customers)
+        .values({
+            name,
+            email,
+            userId,
+        })
+        .returning({
+            id: Customers.id,
+        });
 
     const results = await db
         .insert(Invoices)
@@ -22,6 +34,7 @@ export async function createAction(formData: FormData) {
             value,
             description,
             userId,
+            customerId: customer.id,
             status: 'open',
         })
         .returning({
@@ -46,4 +59,17 @@ export async function updateStatusAction(formData: FormData) {
         .where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId)));
 
     revalidatePath(`/invoices/${id}`, 'page');
+}
+
+export async function deleteInvoiceAction(formData: FormData) {
+    const { userId } = await auth();
+    if (!userId) return;
+
+    const id = formData.get('id') as string;
+
+    const results = await db
+        .delete(Invoices)
+        .where(and(eq(Invoices.id, parseInt(id)), eq(Invoices.userId, userId)));
+
+    redirect('/dashboard');
 }
