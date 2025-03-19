@@ -13,21 +13,45 @@ import { CirclePlus } from 'lucide-react';
 import Link from 'next/link';
 
 import { auth } from '@clerk/nextjs/server';
-import { eq } from 'drizzle-orm';
+import { eq, isNull, and } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { Invoices } from '@/db/schema';
+import { Customers, Invoices } from '@/db/schema';
 import { cn } from '@/lib/utils';
 import Container from '@/components/Container';
 
 export default async function Home() {
-    const { userId } = await auth();
+    const { userId, orgId } = await auth();
     if (!userId) return;
 
-    const results = await db
-        .select()
-        .from(Invoices)
-        .where(eq(Invoices.userId, userId));
+    let results;
+
+    if (orgId) {
+        results = await db
+            .select()
+            .from(Invoices)
+            .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+            .where(eq(Invoices.organizationId, orgId));
+    } else {
+        results = await db
+            .select()
+            .from(Invoices)
+            .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+            .where(
+                and(
+                    eq(Invoices.userId, userId),
+                    isNull(Invoices.organizationId)
+                )
+            );
+    }
+
+    const invoices = results?.map(({ invoices, customers }) => {
+        return {
+            ...invoices,
+            customer: customers,
+        };
+    });
+
     return (
         <main className="h-full my-12">
             <Container>
@@ -64,7 +88,7 @@ export default async function Home() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {results.map((result) => {
+                        {invoices.map((result) => {
                             return (
                                 <TableRow key={result.id}>
                                     <TableCell className="text-left font-medium p-0">
@@ -82,7 +106,7 @@ export default async function Home() {
                                             href={`./invoices/${result.id}`}
                                             className="font-semibold block p-4"
                                         >
-                                            Alex J. F.
+                                            {result.customer.name}
                                         </Link>
                                     </TableCell>
                                     <TableCell className="text-left p-0">
@@ -90,7 +114,7 @@ export default async function Home() {
                                             href={`./invoices/${result.id}`}
                                             className="block p-4"
                                         >
-                                            alex@mail.com
+                                            {result.customer.id}
                                         </Link>
                                     </TableCell>
                                     <TableCell className="text-center p-0">

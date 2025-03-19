@@ -1,6 +1,6 @@
 'use client';
 
-import { Invoices } from '@/db/schema';
+import { Customers, Invoices } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Container from '@/components/Container';
@@ -30,9 +30,11 @@ import { AVAILABLE_STATISES } from '@/data/invoices';
 import { updateStatusAction, deleteInvoiceAction } from '@/app/actions';
 
 interface InvoiceProps {
-    invoice: typeof Invoices.$inferSelect; // $inferSelect -утилита, предоставляемая библиотекой drizzle-orm, Позволяет получить тип данных
+    invoice: typeof Invoices.$inferSelect & {
+        // $inferSelect -утилита, предоставляемая библиотекой drizzle-orm, Позволяет получить тип данных
+        customer: typeof Customers.$inferSelect;
+    };
 }
-
 export default function Invoice({ invoice }: InvoiceProps) {
     const [currentStatus, setCurrentStatus] = useOptimistic(
         invoice.status,
@@ -191,13 +193,13 @@ export default function Invoice({ invoice }: InvoiceProps) {
                         <strong className="block w-28 flex-shrink-0 font-medium text-sm">
                             Billing Name
                         </strong>
-                        <span></span>
+                        <span>{invoice.customer.name}</span>
                     </li>
                     <li className="flex gap-4">
                         <strong className="block w-28 flex-shrink-0 font-medium text-sm">
                             Billing Email
                         </strong>
-                        <span></span>
+                        <span>{invoice.customer.email}</span>
                     </li>
                 </ul>
             </Container>
