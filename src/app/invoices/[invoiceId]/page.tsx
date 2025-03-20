@@ -17,7 +17,9 @@ export default async function InvoicePage({
     const { userId, orgId } = await auth();
     if (!userId) return;
 
-    const invoiceId = await parseInt(params.invoiceId);
+    const paramsResult = await params;
+    const invoiceId = parseInt(paramsResult.invoiceId);
+
     if (isNaN(invoiceId)) {
         throw new Error('Invalid invoice ID');
     }

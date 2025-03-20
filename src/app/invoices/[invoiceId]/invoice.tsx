@@ -4,7 +4,7 @@ import { Customers, Invoices } from '@/db/schema';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import Container from '@/components/Container';
-import { ChevronDown, Ellipsis, Trash2 } from 'lucide-react';
+import { ChevronDown, CreditCard, Ellipsis, Trash2 } from 'lucide-react';
 
 import { useOptimistic } from 'react';
 
@@ -28,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { AVAILABLE_STATISES } from '@/data/invoices';
 import { updateStatusAction, deleteInvoiceAction } from '@/app/actions';
+import Link from 'next/link';
 
 interface InvoiceProps {
     invoice: typeof Invoices.$inferSelect & {
@@ -131,6 +132,15 @@ export default function Invoice({ invoice }: InvoiceProps) {
                                                 Delete Invoice
                                             </button>
                                         </DialogTrigger>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <Link
+                                            href={`/invoices/${invoice.id}/payment`}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <CreditCard className="w-4 h-auto" />
+                                            Payment
+                                        </Link>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>

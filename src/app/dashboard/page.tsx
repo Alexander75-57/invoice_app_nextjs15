@@ -44,6 +44,7 @@ export default async function Home() {
                 )
             );
     }
+    ``;
 
     const invoices = results?.map(({ invoices, customers }) => {
         return {

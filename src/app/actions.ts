@@ -5,8 +5,15 @@ import { auth } from '@clerk/nextjs/server';
 import { eq, and, isNull } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
+import Stripe from 'stripe';
+
 import { Customers, Invoices, Status } from '@/db/schema';
 import { db } from '@/db';
+import { spec } from 'node:test/reporters';
+import { Currency } from 'lucide-react';
+import { headers } from 'next/headers';
+
+const stripe = new Stripe(String(process.env.STRIPE_API_SECRET_KEY));
 
 export async function createAction(formData: FormData) {
     const { userId, orgId } = await auth();
@@ -79,7 +86,8 @@ export async function updateStatusAction(formData: FormData) {
                 )
             );
     }
-    revalidatePath(`/invoices/${id}`, 'page');
+    //revalidatePath(`/invoices/${id}`, 'page');
+    redirect(`/invoices/${id}/payment`);
 }
 
 export async function deleteInvoiceAction(formData: FormData) {
@@ -109,4 +117,43 @@ export async function deleteInvoiceAction(formData: FormData) {
             );
     }
     redirect('/dashboard');
+}
+
+export async function createPayment(formData: FormData) {
+    const headersList = headers();
+    const origin = (await headersList).get('origin');
+
+    const id = parseInt(formData.get('id') as string);
+
+    const [result] = await db
+        .select({
+            status: Invoices.status,
+            value: Invoices.value,
+        })
+        .from(Invoices)
+        .where(eq(Invoices.id, id))
+        .limit(1);
+
+    // Create Checkout Sessions from body params.
+    const session = await stripe.checkout.sessions.create({
+        line_items: [
+            {
+                // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+                price_data: {
+                    currency: 'usd',
+                    product: 'prod_RybDtqfjbzzjH0', //'<product id>',
+                    unit_amount: result.value,
+                },
+                quantity: 1,
+            },
+        ],
+        mode: 'payment',
+        success_url: `${origin}/invoices/${id}/payment?status=success&session_id={CHECKOUT_SESSION_ID}`,
+        //success_url: `${origin}/invoices/${id}/payment?success=true`,
+        cancel_url: `${origin}/invoices/${id}/payment?status=canceled&session_id={CHECKOUT_SESSION_ID}`,
+    });
+    if (!session.url) {
+        throw new Error('Invalid Session');
+    }
+    redirect(session.url);
 }
